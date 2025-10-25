@@ -1,48 +1,25 @@
-"""
-Database Schemas
-
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
-"""
-
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
+from datetime import datetime
 
-# Example schemas (replace with your own):
-
-class User(BaseModel):
+class Game(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Chess games imported from external sources.
+    Collection name: "game"
     """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    source: Literal["chesscom", "lichess"] = Field(..., description="Source of the game")
+    username: str = Field(..., description="Primary player username associated with the import")
+    white: Optional[str] = Field(None, description="White player username")
+    black: Optional[str] = Field(None, description="Black player username")
+    pgn: str = Field(..., description="Complete PGN for the game")
+    rated: Optional[bool] = Field(None, description="Whether the game is rated")
+    speed: Optional[str] = Field(None, description="bullet, blitz, rapid, classical, etc.")
+    time_control: Optional[str] = Field(None, description="Time control string from the source")
+    result: Optional[str] = Field(None, description="Game result from the perspective of the importing user or overall")
+    end_time: Optional[datetime] = Field(None, description="Game end time if available")
+    opening: Optional[str] = Field(None, description="Opening name if available")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
-
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class ImportRequest(BaseModel):
+    username: str
+    months: Optional[int] = Field(1, ge=1, le=12, description="How many months of archives to fetch (chess.com)")
+    limit: Optional[int] = Field(50, ge=1, le=1000, description="Max games to import per username")
